@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 int yylex();
 void yyerror (char const *);
 extern int yylineno;
@@ -12,12 +13,25 @@ extern int yylineno;
 }
 
 %token <valString> NAME TABLECOLUMN
-%token COMILLAS COMMA
+%token COMMA
 %type <valString> columns tables
 %start statement
 
 %%
 statement:
+	columns
+	|tables;
+
+
+columns:
+	NAME
+	|NAME COMMA columns
+	|TABLECOLUMN
+	|TABLECOLUMN COMMA columns;
+
+tables:
+	NAME
+	|NAME COMMA columns;
 
 %%
 void success(){
@@ -30,23 +44,21 @@ void yyerror (char const *message) {
 }
 
 int main(int argc, char *argv[]) {
-extern FILE *yyin;
+	char *input = (char*)malloc(256);
 
-	switch (argc) {
-		case 1:	yyin=stdin;
-			yyparse();
-			break;
-		case 2: yyin = fopen(argv[1], "r");
-			if (yyin == NULL) {
-				printf("ERROR: No se ha podido abrir el fichero.\n");
-			}
-			else {
-				yyparse();
-				fclose(yyin);
-			}
-			break;
-		default: printf("ERROR: Demasiados argumentos.\nSintaxis: %s [fichero_entrada]\n\n", argv[0]);
-	}
+	printf("#######SQL CODE CREATOR#######\n\n");
+	printf("Mostrar:");
+	fgets(input, sizeof(input), stdin);
+    yy_scan_string(input);
+    yyparse();
+
+	input = (char*)realloc(input, 256);
+	printf("Tablas:");
+	fgets(input, sizeof(input), stdin);
+    yy_scan_string(input);
+    yyparse();
+
+	free(input);
 
 	return 0;
 }
