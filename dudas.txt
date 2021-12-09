@@ -1,10 +1,3 @@
-_ es un nombre válido según name?
+Cuando la consulta es un poco larga (no sé la longitud exacta, pero con 3 o 4 atributos y 3 o 4 tablas más o menos) hace cosas raras, no sé si es porque se queda sin memoria y habría que reservar más, o qué pasa
 
-No había forma de diferenciar cuándo se estaba parseando el nombre de una tabla de cuándo se estaba parseando el nombre de una columna, así que se me ocurrió poner delante de cada token una palabra que lo identifique. Por ejemplo:
-Cuando pidan las columnas, habría que escribir Columna-idEmpleado, Columna-numHoras. Así se sabe qué tokens son nombres de columna y cuáles nombres de tabla. El problema es que no consigo reconocer bien el token, no sé por qué, probé de múltiples formas y no funciona.
-
-Funciona lo de poner varios nombres separados con comas? Lo pruebo pero no consigo hacerlo funcionar.
-
-
-Dejo la práctica funcionando como antes. Para intentar seguir lo de poner el identificador (Tabla- o Columna-) delante de los tokens habría que descomentar las líneas de table_name y column_name en trabajo.l (lineas 21 y 22), destruir el token NAME en el .y para crear NAME_TABLE y NAME_COLUMN, y cambiarlos en las reglas. No lo hago ya porque no consigo reconocer bien el token. 
-
+Lo puse en un comentario pero con los JOIN habría que poner el = y los atributos iguales de las tablas, pero yo creo que es imposible porque no tienen ni porqué aparecer en el SELECT entonces no sé cómo solucionaremos eso.

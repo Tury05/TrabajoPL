@@ -24,22 +24,26 @@ int i = 0;
 %%
 statement:
 	columns	{i++;
-			if (i>1)
+			if (i!=1)
 				yyerror("Debe escribir con comillas simples");
 			else
 				atributos = $1;}
-	|tables {tablas = $1;
-			success(atributos, tablas);}
+	|tables {if (i == 1) {
+				tablas = $1;
+				success(atributos, tablas);
+			}
+			else yyerror("Debe escribir con comillas dobles");}
 	;
 
 columns:
-	NAME_COLUMN	{$$ = $1;}
-	|NAME_COLUMN COMMA columns {strcat($1, $3); $$ = $1;}
+	NAME_COLUMN	{$1++; $1[strlen($1) - 1] = '\0'; $$ = $1;} /* las dos primeras instrucciones son para quitar las comillas */
+	|NAME_COLUMN COMMA columns {$1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, ", "), $3); $$ = $1;}
 	;
 
 tables:
-	NAME_TABLE	{$$ = $1;}
-	|NAME_TABLE COMMA tables {strcat($1, $3); $$ = $1;}
+	NAME_TABLE	{$1++; $1[strlen($1) - 1] = '\0'; $$ = $1;}
+	|NAME_TABLE COMMA tables {$1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, " JOIN "), $3); $$ = $1;}
+	/* Con el JOIN hay que poner el ON y los dos atributos que son iguales en las tablas, pero creo que es imposible saber cuáles son */
 	;
 
 %%
@@ -50,7 +54,6 @@ void success(char* buff1, char* buff2){
 
 void yyerror (char const *message) {
     fprintf (stderr, "Error: %s\n", message);
-	exit(1);
 }
 
 int main(int argc, char *argv[]) {
