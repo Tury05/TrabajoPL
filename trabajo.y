@@ -10,6 +10,7 @@ extern int yylineno;
 char * atributos;
 char * tablas;
 int i = 0;
+int join = 0;
 %}
 
 %union{
@@ -17,8 +18,8 @@ int i = 0;
 }
 
 %token <valString> NAME_TABLE NAME_COLUMN
-%token COMMA
-%type <valString> columns tables
+%token COMMA OPEN_KEY CLOSE_KEY
+%type <valString> columns tables keys
 %start statement
 
 %%
@@ -33,6 +34,7 @@ statement:
 				success(atributos, tablas);
 			}
 			else yyerror("Debe escribir con comillas dobles");}
+	|keys
 	;
 
 columns:
@@ -44,6 +46,11 @@ tables:
 	NAME_TABLE	{$1++; $1[strlen($1) - 1] = '\0'; $$ = $1;}
 	|NAME_TABLE COMMA tables {$1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, " JOIN "), $3); $$ = $1;}
 	/* Con el JOIN hay que poner el ON y los dos atributos que son iguales en las tablas, pero creo que es imposible saber cuáles son */
+	;
+
+keys:
+	OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY
+	|OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY COMMA keys
 	;
 
 %%
@@ -71,6 +78,15 @@ int main(int argc, char *argv[]) {
 	fgets(input, 2048, stdin);
   	yy_scan_string(input);
   	yyparse();
+
+	if (join == 1){
+		input = (char*)realloc(input, 2048);
+		printf("Relacion clave-primaria/clave-foranea: ");
+		fgets(input, 2048, stdin);
+  		yy_scan_string(input);
+  		yyparse();
+	}
+
 
 	free(input);
 	return 0;
