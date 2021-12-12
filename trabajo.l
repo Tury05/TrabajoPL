@@ -2,7 +2,6 @@
 #include "trabajo.tab.h"
 #include <stdbool.h>
 %}
-%option yylineno
 digit               [0-9]
 alphabet            [a-zA-Z]
 name                ({alphabet}|"_")({alphabet}|{digit})*
@@ -20,5 +19,6 @@ delim               [ \t\n]
 {column_name}       {yylval.valString = strdup(yytext); return NAME_COLUMN;}
 {open_key}          {yylval.valString = strdup(yytext); return OPEN_KEY;}
 {close_key}         {yylval.valString = strdup(yytext); return CLOSE_KEY;}
-{comma}             {return COMMA;} /*Si hay varias tablas, columnas... se deben separar con comas.*/
+{comma}             {yylval.valString = strdup(yytext); return COMMA;} /*Si hay varias tablas, columnas... se deben separar con comas.*/
+.                   {return ERROR;}
 %%
