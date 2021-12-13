@@ -9,7 +9,7 @@ void success(char* buff1, char* buff2);
 void success2(char* buff1, char* buff2, char* buff3);
 void handleError(int error);
 char *listOfStrings(char* stringOfTables);
-char* getKeys(char* string);
+char* quitCorchetes(char* string);
 char * atributos;
 char * tablas;
 char * claves;
@@ -23,7 +23,8 @@ int numOfRel = 0;
 	char *valString;
 }
 
-%token <valString> NAME_TABLE NAME_COLUMN COMMA OPEN_KEY CLOSE_KEY
+%token <valString> NAME_TABLE NAME_COLUMN COMMA
+%token OPEN_KEY CLOSE_KEY
 %token ERROR
 %type <valString> columns tables keys
 %start statement
@@ -50,7 +51,7 @@ statement:
 						success(atributos, tablas);
 					}
 					else if (join == 1)
-						tablas = listOfStrings($1);
+						tablas = $1;
 				}
 			}
 	|keys{i++;
@@ -62,11 +63,11 @@ statement:
 
 			else{
 				if(numOfTables==2){
-					claves = getKeys($1);
+					claves = $1;
 					success2(atributos, tablas, claves);
 				}
 				else{
-					claves = listOfStrings(getKeys($1));
+					claves = $1;
 					success2(atributos, tablas, claves);
 				}
 			}
@@ -81,17 +82,17 @@ columns:
 	;
 
 tables:
-	NAME_TABLE	{$1++; $1[strlen($1) - 1] = '\0'; $$ = $1;}
-	|NAME_TABLE COMMA tables {join=1; numOfTables+=2; $1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, $2), $3); $$ = $1;}
+	NAME_TABLE	{numOfTables++;$1++; $1[strlen($1) - 1] = '\0'; $$ = $1;}
+	|NAME_TABLE COMMA tables {join=1; numOfTables++; $1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, $2), $3); $$ = $1;}
 	/* Con el JOIN hay que poner el ON y los dos atributos que son iguales en las tablas, pero creo que es imposible saber cuáles son */
 	;
 
 keys:
-	OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY {/*$2++;*/ $2[strlen($2) - 1] = '\0'; $4++; /*$4[strlen($4) - 1] = '\0';*/ strcat(strcat($2, $3), $4); $$ = $2;}
-	|OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY COMMA keys {numOfRel+=2;$2++; $2[strlen($2) - 1] = '\0'; 
+	OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY {numOfRel++; $2++; $2[strlen($2) - 1] = '\0'; $4++; $4[strlen($4) - 1] = '\0'; strcat(strcat($2, $3), $4); $$ = $2;}
+	|OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY COMMA keys {numOfRel++; $2++; $2[strlen($2) - 1] = '\0'; 
 																	$4++; $4[strlen($4) - 1] = '\0'; 
-																	strcat(strcat(strcat(strcat(strcat(($1, $2), $3), $4), $5), $6), $7); 
-																	$$ = $1;}
+																	strcat(strcat(strcat(strcat($2, $3), $4), $6), $7); 
+																	$$ = $2;}
 	;
 
 %%
@@ -101,26 +102,27 @@ void success(char* buff1, char* buff2){
 }
 
 void success2(char* buff1, char* buff2, char* buff3){
+	char *save_ptr1, *save_ptr2;
+	char *token1 = strtok_r(buff2, ",", &save_ptr1);
+	char *token2 = strtok_r(buff3, ",", &save_ptr2);
 	printf("\n-----Código SQL generado-----\n");
-	printf("SELECT %s\nFROM %s\n", buff1, buff2);
-	buff2 = strtok(NULL, ",");
-	
-	while( buff2 != NULL ) {
-		printf("JOIN %s ON ", buff2);
-		if (numOfRel==0){
-			buff3 = listOfStrings(buff3);
-			printf("%s = ", buff3);
-			buff3 = strtok(NULL, ",");
-			printf("%s\n", buff3);
-		}
+	printf("SELECT %s\nFROM %s\n", buff1, token1);
+	token1 = strtok_r(NULL, ",", &save_ptr1);
 
-		else{
-			for(int j=1; j<=numOfRel/2;j++){
-				printf("%s = %s AND", buff3, buff2);
-			}
-			printf("%s = %s", buff3, buff2);
+	while( token1 != NULL ) {
+		printf("JOIN %s ON ", token1);
+		if ((numOfTables==(numOfRel+1)) && numOfTables==2){
+			printf("%s = ", token2);
+			token2 = strtok_r(NULL, ",", &save_ptr2);
+			printf("%s\n", token2);
 		}
-		buff2 = strtok(NULL, ",");
+		else if((numOfTables==(numOfRel+1)) && numOfTables>2){
+			printf("%s = ", token2);
+			token2 = strtok_r(NULL, ",", &save_ptr2);
+			printf("%s\n", token2);
+			token2 = strtok_r(NULL, ",", &save_ptr2);
+		}
+		token1 = strtok_r(NULL, ",", &save_ptr1);
 	}
 }
 
@@ -150,11 +152,12 @@ void handleError(int error){
 }
 
 char *listOfStrings(char* string){
-	char *token = strtok(string, ",");
+	char *save_ptr1;
+	char *token = strtok_r(string, ",", &save_ptr1);
 	return token;
 }
 
-char* getKeys(char* string){
+char* quitCorchetes(char* string){
 	char * keys = strdup(string);
 	keys++;
 	keys[strlen(keys) - 1] = '\0';
