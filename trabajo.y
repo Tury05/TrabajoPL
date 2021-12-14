@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 int yylex();
 void yyerror (char const *);
 void *yy_scan_string(const char*);
@@ -16,17 +17,17 @@ char * claves;
 int i = 0;
 int join = 0;
 int numOfTables = 0;
-int numOfRel = 0;
+int numOfRels = 0;
+bool rels = false;
 %}
 
 %union{
 	char *valString;
 }
 
-%token <valString> NAME_TABLE NAME_COLUMN COMMA
-%token OPEN_KEY CLOSE_KEY
+%token <valString> NAME_TABLE NAME_COLUMN COMMA OPEN_KEY CLOSE_KEY
 %token ERROR
-%type <valString> columns tables keys
+%type <valString> columns tables keys multiplekeys keys2
 %start statement
 
 %%
@@ -62,16 +63,23 @@ statement:
 				handleError(6);
 
 			else{
-				if(numOfTables==2){
-					claves = $1;
-					success2(atributos, tablas, claves);
-				}
-				else{
-					claves = $1;
-					success2(atributos, tablas, claves);
-				}
+				claves = $1;
+				success2(atributos, tablas, claves);
 			}
 		}
+	|multiplekeys{i++;
+					if (i==1) 
+						handleError(3);
+
+					else if (i==2) 
+						handleError(6);
+
+					else{
+						claves = $1;
+						success2(atributos, tablas, claves);
+					}
+				}
+
 	|ERROR{yyerror("Algo hiciste mal :P"); return 0;}
 	;
 
@@ -88,8 +96,35 @@ tables:
 	;
 
 keys:
-	OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY {numOfRel++; $2++; $2[strlen($2) - 1] = '\0'; $4++; $4[strlen($4) - 1] = '\0'; strcat(strcat($2, $3), $4); $$ = $2;}
-	|OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY COMMA keys {numOfRel++; $2++; $2[strlen($2) - 1] = '\0'; 
+	OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY {numOfRels++; $2++; $2[strlen($2) - 1] = '\0'; $4++; $4[strlen($4) - 1] = '\0'; strcat(strcat($2, $3), $4); $$ = $2;}
+	|OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY COMMA keys {numOfRels++; $2++; $2[strlen($2) - 1] = '\0'; 
+																	$4++; $4[strlen($4) - 1] = '\0'; 
+																	strcat(strcat(strcat(strcat($2, $3), $4), $6), $7); 
+																	$$ = $2;}
+	|OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY COMMA multiplekeys {numOfRels++; $2++; $2[strlen($2) - 1] = '\0';
+																			$4++; $4[strlen($4) - 1] = '\0';
+																			strcat(strcat(strcat(strcat($2, $3), $4), $6), $7);
+																			$$ = $2;}
+	;
+
+multiplekeys:	
+	OPEN_KEY OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY COMMA keys2 CLOSE_KEY {numOfRels++; rels = true; $3++; $3[strlen($3) - 1] = '\0';
+																						$5++; $5[strlen($5) - 1] = '\0';
+																						strcat(strcat(strcat(strcat(strcat(strcat($1, $3), $4), $5), $7), $8), $9);
+																						$$ = $1;}
+	|OPEN_KEY OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY COMMA keys2 CLOSE_KEY COMMA keys {numOfRels++; rels = true; $3++; $3[strlen($3) - 1] = '\0';
+																									$5++; $5[strlen($5) - 1] = '\0';
+																									strcat(strcat(strcat(strcat(strcat(strcat(strcat(strcat($1, $3), $4), $5), $7), $8), $9), $10), $11);
+																									$$ = $1;}
+	|OPEN_KEY OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY COMMA keys2 CLOSE_KEY COMMA multiplekeys {numOfRels++; rels = true; $3++; $3[strlen($3) - 1] = '\0';
+																									$5++; $5[strlen($5) - 1] = '\0';
+																									strcat(strcat(strcat(strcat(strcat(strcat(strcat(strcat($1, $3), $4), $5), $7), $8), $9), $10), $11);
+																									$$ = $1;}
+	;
+
+keys2:
+	OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY {$2++; $2[strlen($2) - 1] = '\0'; $4++; $4[strlen($4) - 1] = '\0'; strcat(strcat($2, $3), $4); $$ = $2;}
+	|OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY COMMA keys2 {$2++; $2[strlen($2) - 1] = '\0'; 
 																	$4++; $4[strlen($4) - 1] = '\0'; 
 																	strcat(strcat(strcat(strcat($2, $3), $4), $6), $7); 
 																	$$ = $2;}
@@ -105,23 +140,68 @@ void success2(char* buff1, char* buff2, char* buff3){
 	char *save_ptr1, *save_ptr2;
 	char *token1 = strtok_r(buff2, ",", &save_ptr1);
 	char *token2 = strtok_r(buff3, ",", &save_ptr2);
+	
+	if (numOfTables>(numOfRels+1))								//Verifica que cada dos tablas haya una relacion(de una o varias parejas de claves)
+		yyerror("Faltan relaciones FKEY->PKEY");
+	
+	else if(numOfTables<(numOfRels+1))
+		yyerror("Has escrito demasiadas relaciones FKEY->PKEY");
+
 	printf("\n-----Código SQL generado-----\n");
 	printf("SELECT %s\nFROM %s\n", buff1, token1);
 	token1 = strtok_r(NULL, ",", &save_ptr1);
 
-	while( token1 != NULL ) {
+	while(token1 != NULL) {										//Bucle para imprimir joins hasta que no queden tablas
 		printf("JOIN %s ON ", token1);
-		if ((numOfTables==(numOfRel+1)) && numOfTables==2){
-			printf("%s = ", token2);
-			token2 = strtok_r(NULL, ",", &save_ptr2);
-			printf("%s\n", token2);
+		if(!rels){												//Relacion con solo una pareja de claves(keys)
+			if ((numOfTables==(numOfRels+1)) && numOfTables==2){
+				printf("%s = ", token2);
+				token2 = strtok_r(NULL, ",", &save_ptr2);
+				printf("%s", token2);
+			}
+			else if((numOfTables==(numOfRels+1)) && numOfTables>2){
+				printf("%s = ", token2);
+				token2 = strtok_r(NULL, ",", &save_ptr2);
+				printf("%s", token2);
+				token2 = strtok_r(NULL, ",", &save_ptr2);
+			}
 		}
-		else if((numOfTables==(numOfRel+1)) && numOfTables>2){
-			printf("%s = ", token2);
-			token2 = strtok_r(NULL, ",", &save_ptr2);
-			printf("%s\n", token2);
-			token2 = strtok_r(NULL, ",", &save_ptr2);
+		else{													//Relacion con varias parejas de claves(multiplekeys)
+			if(token2[0] == '('){
+				token2++;							
+				printf("%s = ", token2);
+				token2 = strtok_r(NULL, ",", &save_ptr2);
+				if(token2[strlen(token2) - 1] == ')'){
+					yyerror("Solo una pareja de claves dentro del doble parentesis");
+				}
+				else{
+					printf("%s", token2);
+					token2 = strtok_r(NULL, ",", &save_ptr2);
+				}
+				while(token2[strlen(token2) - 1] != ')') {			//Bucle para escribir todas las claves de una misma relacion(JOIN tabla ON clave1=clave2 AND clave3 = clave4)
+					printf(" AND ");
+					printf("%s = ", token2);
+					token2 = strtok_r(NULL, ",", &save_ptr2);
+					if(token2[strlen(token2) - 1] == ')'){
+						token2[strlen(token2) - 1] = '\0';
+						printf("%s", token2);
+						token2[strlen(token2) - 1] = ')';
+					}
+					else{
+						printf("%s", token2);
+						token2 = strtok_r(NULL, ",", &save_ptr2);
+					}
+				}
+				token2 = strtok_r(NULL, ",", &save_ptr2);
+			}
+			else {
+				printf("%s = ", token2);
+				token2 = strtok_r(NULL, ",", &save_ptr2);
+				printf("%s", token2);
+				token2 = strtok_r(NULL, ",", &save_ptr2);
+			}
 		}
+		printf("\n");
 		token1 = strtok_r(NULL, ",", &save_ptr1);
 	}
 }
