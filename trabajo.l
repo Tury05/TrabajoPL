@@ -5,6 +5,8 @@
 digit               [0-9]
 alphabet            [a-zA-Z]
 name                ({alphabet}|"_")({alphabet}|{digit})*
+symbols             [\>\<\*+\-/=]
+expression          {name}{symbols}{name}
 namedotname         {name}"."{name}
 table_name          \'{name}\'
 column_name         \"({name}|{namedotname})\"
@@ -13,6 +15,8 @@ open_key            "("
 close_key           ")"
 order_asc           "ascendente"|"ASCENDENTE"|"Ascendente"|"ASC"|"asc"
 order_desc          "descendente"|"DESCENDENTE"|"Descendente"|"DESC"|"desc"
+open_where          "{"
+close_where         "}"
 delim               [ \t\n]
 
 %%

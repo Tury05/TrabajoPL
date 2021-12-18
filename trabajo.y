@@ -306,13 +306,45 @@ char* quitCorchetes(char* string){
 	return keys;
 }
 
+void check_attributes(char* buff1, char* buff2) {
+	char str1[50];
+	char str2[50];
+	int i = 0, j = 0, k = 0, l = 0, end = 0, start = 0, success = 1;
+	while (buff1[i] != '\0') {
+		if (buff1[i] == '.') {
+			j = i;
+			end = j;
+			while ((buff1[j-1] != ',') && j>0) {
+				j--;
+			}
+			start = j;
+			k = 0;
+			while ((buff2[k] != '\0')) {
+				l = 0;
+				if (buff2[l] == buff1[start]) {
+					while ((l < end) || ((buff2[l] != ',') && (buff2[l] != '\0'))) {
+						str1[l] = buff1[l];
+						str2[l] = buff2[l];
+						l++;
+					}
+					success = strcmp(str1, str2);
+				}
+				if (success != 0) {
+					yyerror("La tabla seleccionada en los atributos no fue seleccionada en las tablas");
+				}
+				k++;
+			}
+		}
+		i++;
+	}
+}
+
 int main(int argc, char *argv[]) {
 	char *input = (char*)malloc(2048);
 	bool file = false;
 	FILE *f;
-	int fd;
+	int fd = dup(fileno(stdout));
 	if (argc == 3 && strcmp(argv[1], "-f") == 0) {
-		fd = dup(fileno(stdout));
 		f = freopen(argv[2], "a", stdout);
 		file = true;
 	}
@@ -341,7 +373,7 @@ int main(int argc, char *argv[]) {
 		i++;				//Para seguir controlando el orden de los inputs
 
 	input = (char*)realloc(input, 2048);
-	printf("Agrupar por atributos (opcional): ");
+	dprintf(fd, "Agrupar por atributos (opcional): ");
 	fgets(input, 2048, stdin);
 	if (strlen(input) > 1){
 		yy_scan_string(input);
@@ -349,43 +381,15 @@ int main(int argc, char *argv[]) {
 	}
 
 	input = (char*)realloc(input, 2048);
-	printf("Orden ASCENDENTE/DESCENDENTE por atributos (opcional): ");
+	dprintf(fd, "Orden ASCENDENTE/DESCENDENTE por atributos (opcional): ");
 	fgets(input, 2048, stdin);
 	if (strlen(input) > 1){
 		yy_scan_string(input);
   		yyparse();
 	}
 
-	if(atributos != NULL && tablas!= NULL){
-		if(claves != NULL){
-			if(group_by != NULL){
-				if(orden!=NULL)
-					success(atributos, tablas, claves, orden, group_by);
-				else
-					success(atributos, tablas, claves, NULL, group_by);
-			}
-			else{
-				if(orden!=NULL)
-					success(atributos, tablas, claves, orden, NULL);
-				else
-					success(atributos, tablas, claves, NULL, NULL);
-			}
-		}
-		else{
-			if(group_by != NULL){
-				if(orden!=NULL)
-					success(atributos, tablas, NULL, orden, group_by);
-				else
-					success(atributos, tablas, NULL, NULL, group_by);
-			}
-			else{
-				if(orden!=NULL)
-					success(atributos, tablas, NULL, orden, NULL);
-				else
-					success(atributos, tablas, NULL, NULL, NULL);
-			}
-		}
-	}
+	check_attributes(atributos, tablas);
+	success(atributos, tablas, claves, orden, group_by);
 
 	if (file) fclose(f);
 	free(input);
