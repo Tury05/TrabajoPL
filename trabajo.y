@@ -3,11 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <fcntl.h>
 int yylex();
 void yyerror (char const *);
 void *yy_scan_string(const char*);
-void success(char* buff1, char* buff2);
-void success2(char* buff1, char* buff2, char* buff3);
+void success(char* buff1, char* buff2, char* buff3);
 void handleError(int error);
 char *listOfStrings(char* stringOfTables);
 char* quitCorchetes(char* string);
@@ -49,7 +50,7 @@ statement:
 				else{
 					if (join == 0){
 						tablas = $1;
-						success(atributos, tablas);
+						success(atributos, tablas, claves);
 					}
 					else if (join == 1)
 						tablas = $1;
@@ -64,7 +65,7 @@ statement:
 
 			else{
 				claves = $1;
-				success2(atributos, tablas, claves);
+				success(atributos, tablas, claves);
 			}
 		}
 	|multiplekeys{i++;
@@ -76,7 +77,7 @@ statement:
 
 					else{
 						claves = $1;
-						success2(atributos, tablas, claves);
+						success(atributos, tablas, claves);
 					}
 				}
 
@@ -85,14 +86,14 @@ statement:
 
 columns:
 	NAME_COLUMN	{$1++; $1[strlen($1) - 1] = '\0'; $$ = $1;} /* las dos primeras instrucciones son para quitar las comillas */
-	|NAME_COLUMN COMMA columns {$1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, $2), $3); $$ = $1;}
-	|NAME_COLUMN COMMA ERROR {yyerror("Atributo invalido");}
+	|NAME_COLUMN COMMA columns {$1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, ", "), $3); $$ = $1;}
+	|NAME_COLUMN COMMA ERROR {yyerror("Nombre de tabla inválido");}
 	;
 
 tables:
 	NAME_TABLE	{numOfTables++;$1++; $1[strlen($1) - 1] = '\0'; $$ = $1;}
 	|NAME_TABLE COMMA tables {join=1; numOfTables++; $1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, $2), $3); $$ = $1;}
-	/* Con el JOIN hay que poner el ON y los dos atributos que son iguales en las tablas, pero creo que es imposible saber cuáles son */
+	|NAME_TABLE COMMA ERROR {yyerror("Nombre de tabla inválido");}
 	;
 
 keys:
@@ -131,12 +132,7 @@ keys2:
 	;
 
 %%
-void success(char* buff1, char* buff2){
-    printf("Código SQL generado:\n");
-	printf("SELECT %s\nFROM %s\n", buff1, buff2);
-}
-
-void success2(char* buff1, char* buff2, char* buff3){
+void success(char* buff1, char* buff2, char* buff3){
 	char *save_ptr1, *save_ptr2;
 	char *token1 = strtok_r(buff2, ",", &save_ptr1);
 	char *token2 = strtok_r(buff3, ",", &save_ptr2);
@@ -148,7 +144,9 @@ void success2(char* buff1, char* buff2, char* buff3){
 		yyerror("Has escrito demasiadas relaciones FKEY->PKEY");
 
 	printf("\n-----Código SQL generado-----\n");
-	printf("SELECT %s\nFROM %s\n", buff1, token1);
+	printf("SELECT %s\nFROM %s\n", buff1, token1);		
+		
+	if (join == 0) exit(0); // Si solo hay una tabla acaba aquí la ejecución
 	token1 = strtok_r(NULL, ",", &save_ptr1);
 
 	while(token1 != NULL) {										//Bucle para imprimir joins hasta que no queden tablas
@@ -246,29 +244,37 @@ char* quitCorchetes(char* string){
 
 int main(int argc, char *argv[]) {
 	char *input = (char*)malloc(2048);
+	bool file = false;
+	FILE *f;
+	int fd;
+	if (argc == 3 && strcmp(argv[1], "-f") == 0) {
+		fd = dup(fileno(stdout));
+		f = freopen(argv[2], "a", stdout);
+		file = true;
+	}
 
-	printf("#######SQL CODE CREATOR#######\n\n");
-	printf("Atributos a mostrar (\"\"): ");
+	dprintf(fd, "#######SQL CODE CREATOR#######\n\n");
+	dprintf(fd, "Atributos a mostrar (\"\"): ");
 	fgets(input, 2048, stdin);
 	yy_scan_string(input);
 	
   	yyparse();
 
 	input = (char*)realloc(input, 2048);
-	printf("Tablas a las que pertenecen los atributos (''): ");
+	dprintf(fd, "Tablas a las que pertenecen los atributos (''): ");
 	fgets(input, 2048, stdin);
   	yy_scan_string(input);
   	yyparse();
 
 	if (join == 1){
 		input = (char*)realloc(input, 2048);
-		printf("Relacion FKEY->PKEY: ");
+		dprintf(fd, "Relacion FKEY->PKEY: ");
 		fgets(input, 2048, stdin);
   		yy_scan_string(input);
   		yyparse();
 	}
 
-
+	if (file) fclose(f);
 	free(input);
 	return 0;
 }
