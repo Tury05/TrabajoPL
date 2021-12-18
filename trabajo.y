@@ -5,20 +5,21 @@
 #include <stdbool.h>
 int yylex();
 void yyerror (char const *);
-void *yy_scan_string(const char*);
-void success(char* buff1, char* buff2);
-void success2(char* buff1, char* buff2, char* buff3);
-void handleError(int error);
-char *listOfStrings(char* stringOfTables);
-char* quitCorchetes(char* string);
+void * yy_scan_string(const char*);
+void success(char* buff1, char* buff2, char* buff3, char* buff4, char* buff5);
+char * listOfStrings(char* stringOfTables);
+char * quitCorchetes(char* string);
 char * atributos;
 char * tablas;
 char * claves;
+char * orden;
+char * group_by;
 int i = 0;
 int join = 0;
 int numOfTables = 0;
 int numOfRels = 0;
 bool rels = false;
+int order_by = 0;
 %}
 
 %union{
@@ -26,73 +27,94 @@ bool rels = false;
 }
 
 %token <valString> NAME_TABLE NAME_COLUMN COMMA OPEN_KEY CLOSE_KEY
-%token ERROR
-%type <valString> columns tables keys multiplekeys keys2
+%token ERROR ASC DESC
+%type <valString> columns tables keys multiplekeys keys2 order
 %start statement
 
 %%
 statement:
 	columns	{i++;
 			if (i==2) //Comprobamos que solo se escriban atributos una vez
-				handleError(1);
-			else if (i==3) //Comprobamos que solo se escriban atributos una vez
-				handleError(4);
+				yyerror("Has escrito atributos en vez de tablas");
+			else if (i==3)
+				yyerror("Has escrito atributos en vez de claves");
+			else if (i==5)
+				yyerror("No has escrito el orden (ASCENDENTE/DESCENDENTE)");
+			else if (i == 1)
+				atributos = $1;
 			else
-				atributos = $1;}
+				group_by = $1;}
 	|tables {i++;
-				if (i==1) 
-					handleError(2);
+				if (i==1 || i==4) 
+					yyerror("Has escrito tablas en vez de atributos");
 				
 				else if (i==3) 
-					handleError(5);
+					yyerror("Has escrito tablas en vez de claves");
 
-				else{
-					if (join == 0){
-						tablas = $1;
-						success(atributos, tablas);
-					}
-					else if (join == 1)
-						tablas = $1;
-				}
+				else if (i==5)
+					yyerror("Ha escrito tablas en vez de un orden");
+
+				else
+					tablas = $1;
 			}
 	|keys{i++;
-			if (i==1) 
-				handleError(3);
+			if (i==1 || i==4) 
+				yyerror("Has escrito relaciones en vez de atributos");
 
 			else if (i==2) 
-				handleError(6);
+				yyerror("Has escrito relaciones en vez de tablas");
+			
+			else if (i==5)
+				yyerror("Ha escrito relaciones en vez de un orden");
 
-			else{
+			else
 				claves = $1;
-				success2(atributos, tablas, claves);
-			}
 		}
 	|multiplekeys{i++;
-					if (i==1) 
-						handleError(3);
+					if (i==1 || i==4) 
+						yyerror("Has escrito relaciones en vez de atributos");
 
 					else if (i==2) 
-						handleError(6);
+						yyerror("Has escrito relaciones en vez de tablas");
 
-					else{
+					else if (i==5)
+						yyerror("Ha escrito relaciones en vez de un orden");
+
+					else
 						claves = $1;
-						success2(atributos, tablas, claves);
-					}
 				}
+	|order{i++;
+			if (i==1 || i==4)
+				yyerror("Has escrito un orden en vez de solo atributos");
+			
+			else if (i==2)
+				yyerror("Has escrito un orden en vez de tablas");
+			
+			else if (i==3)
+				yyerror("Has escrito un orden en vez de relaciones");
+			
+			else
+				orden = $1;
 
-	|ERROR{yyerror("Algo hiciste mal :P"); return 0;}
+
+	}
+
+	|ERROR{yyerror("Parametro incorrecto"); return 0;}
 	;
 
 columns:
 	NAME_COLUMN	{$1++; $1[strlen($1) - 1] = '\0'; $$ = $1;} /* las dos primeras instrucciones son para quitar las comillas */
 	|NAME_COLUMN COMMA columns {$1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, $2), $3); $$ = $1;}
 	|NAME_COLUMN COMMA ERROR {yyerror("Atributo invalido");}
+	|ERROR COMMA columns {yyerror("Atributo invalido");}
+	|ERROR COMMA ERROR {yyerror("Atributos invalido");}
 	;
 
 tables:
 	NAME_TABLE	{numOfTables++;$1++; $1[strlen($1) - 1] = '\0'; $$ = $1;}
 	|NAME_TABLE COMMA tables {join=1; numOfTables++; $1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, $2), $3); $$ = $1;}
-	/* Con el JOIN hay que poner el ON y los dos atributos que son iguales en las tablas, pero creo que es imposible saber cuáles son */
+	|ERROR COMMA tables {yyerror("Tabla invalido");}
+	|NAME_TABLE COMMA ERROR {yyerror("Tabla invalido");}
 	;
 
 keys:
@@ -105,6 +127,17 @@ keys:
 																			$4++; $4[strlen($4) - 1] = '\0';
 																			strcat(strcat(strcat(strcat($2, $3), $4), $6), $7);
 																			$$ = $2;}
+	|OPEN_KEY ERROR COMMA NAME_COLUMN CLOSE_KEY {yyerror("Clave inválida");}
+	|OPEN_KEY NAME_COLUMN COMMA ERROR CLOSE_KEY {yyerror("Clave inválida");}
+	|OPEN_KEY ERROR COMMA ERROR CLOSE_KEY {yyerror("Clave inválida");}
+	|OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY COMMA ERROR {yyerror("Clave inválida");}
+	|OPEN_KEY ERROR COMMA NAME_COLUMN CLOSE_KEY COMMA keys {yyerror("Clave inválida");}
+	|OPEN_KEY ERROR COMMA NAME_COLUMN CLOSE_KEY COMMA multiplekeys {yyerror("Clave inválida");}
+	|OPEN_KEY NAME_COLUMN COMMA ERROR CLOSE_KEY COMMA multiplekeys {yyerror("Clave inválida");}
+	|OPEN_KEY NAME_COLUMN COMMA ERROR CLOSE_KEY COMMA keys {yyerror("Clave inválida");}
+	|OPEN_KEY ERROR COMMA ERROR CLOSE_KEY COMMA keys {yyerror("Clave inválida");}
+	|OPEN_KEY ERROR COMMA ERROR CLOSE_KEY COMMA multiplekeys {yyerror("Clave inválida");}
+	|OPEN_KEY ERROR COMMA ERROR CLOSE_KEY COMMA ERROR {yyerror("Clave inválida");}
 	;
 
 multiplekeys:	
@@ -120,6 +153,14 @@ multiplekeys:
 																									$5++; $5[strlen($5) - 1] = '\0';
 																									strcat(strcat(strcat(strcat(strcat(strcat(strcat(strcat($1, $3), $4), $5), $7), $8), $9), $10), $11);
 																									$$ = $1;}
+	
+	|OPEN_KEY OPEN_KEY ERROR COMMA NAME_COLUMN CLOSE_KEY COMMA keys2 CLOSE_KEY {yyerror("Clave inválida");}
+	|OPEN_KEY OPEN_KEY NAME_COLUMN COMMA ERROR CLOSE_KEY COMMA keys2 CLOSE_KEY {yyerror("Clave inválida");}
+	|OPEN_KEY OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY COMMA ERROR CLOSE_KEY {yyerror("Clave inválida");}
+	|OPEN_KEY OPEN_KEY ERROR COMMA NAME_COLUMN CLOSE_KEY COMMA ERROR CLOSE_KEY {yyerror("Clave inválida");}
+	|OPEN_KEY OPEN_KEY NAME_COLUMN COMMA ERROR CLOSE_KEY COMMA ERROR CLOSE_KEY {yyerror("Clave inválida");}
+	|OPEN_KEY OPEN_KEY ERROR COMMA ERROR CLOSE_KEY COMMA keys2 CLOSE_KEY {yyerror("Clave inválida");}
+	|OPEN_KEY OPEN_KEY ERROR COMMA ERROR CLOSE_KEY COMMA ERROR CLOSE_KEY {yyerror("Clave inválida");}
 	;
 
 keys2:
@@ -128,18 +169,35 @@ keys2:
 																	$4++; $4[strlen($4) - 1] = '\0'; 
 																	strcat(strcat(strcat(strcat($2, $3), $4), $6), $7); 
 																	$$ = $2;}
+	|OPEN_KEY ERROR COMMA NAME_COLUMN CLOSE_KEY {yyerror("Clave inválida");}
+	|OPEN_KEY NAME_COLUMN COMMA ERROR CLOSE_KEY {yyerror("Clave inválida");}
+	|OPEN_KEY ERROR COMMA ERROR CLOSE_KEY {yyerror("Clave inválida");}
+	|OPEN_KEY NAME_COLUMN COMMA NAME_COLUMN CLOSE_KEY COMMA ERROR {yyerror("Clave inválida");}
+	|OPEN_KEY ERROR COMMA ERROR CLOSE_KEY COMMA ERROR {yyerror("Clave inválida");}
+	|OPEN_KEY ERROR COMMA NAME_COLUMN CLOSE_KEY COMMA ERROR {yyerror("Clave inválida");}
+	|OPEN_KEY NAME_COLUMN COMMA ERROR CLOSE_KEY COMMA ERROR {yyerror("Clave inválida");}
+	;
+
+order:
+	NAME_COLUMN ASC {order_by=1; $1++; $1[strlen($1) - 1] = '\0'; $$=$1;}
+	|NAME_COLUMN DESC {order_by=2; $1++; $1[strlen($1) - 1] = '\0'; $$=$1;}
+	|NAME_COLUMN COMMA columns ASC {order_by=1; $1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, $2), $3); $$=$1;}
+	|NAME_COLUMN COMMA columns DESC {order_by=2; $1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, $2), $3); $$=$1;}
+	|ERROR ASC {yyerror("Atributo invalido");}
+	|ERROR DESC {yyerror("Atributo invalido");}
+	|ERROR COMMA columns ASC {yyerror("Atributo invalido");}
+	|ERROR COMMA columns DESC {yyerror("Atributo invalido");}
+	|NAME_COLUMN COMMA ERROR ASC {yyerror("Atributo invalido");}
+	|NAME_COLUMN COMMA ERROR DESC {yyerror("Atributo invalido");}
+	|ERROR COMMA ERROR ASC {yyerror("AtributoS invalido");}
+	|ERROR COMMA ERROR DESC {yyerror("AtributoS invalido");}
 	;
 
 %%
-void success(char* buff1, char* buff2){
-    printf("Código SQL generado:\n");
-	printf("SELECT %s\nFROM %s\n", buff1, buff2);
-}
-
-void success2(char* buff1, char* buff2, char* buff3){
+void success(char* buff1, char* buff2, char* buff3, char* buff4, char* buff5){
 	char *save_ptr1, *save_ptr2;
 	char *token1 = strtok_r(buff2, ",", &save_ptr1);
-	char *token2 = strtok_r(buff3, ",", &save_ptr2);
+	char *token2;
 	
 	if (numOfTables>(numOfRels+1))								//Verifica que cada dos tablas haya una relacion(de una o varias parejas de claves)
 		yyerror("Faltan relaciones FKEY->PKEY");
@@ -150,6 +208,9 @@ void success2(char* buff1, char* buff2, char* buff3){
 	printf("\n-----Código SQL generado-----\n");
 	printf("SELECT %s\nFROM %s\n", buff1, token1);
 	token1 = strtok_r(NULL, ",", &save_ptr1);
+
+	if(buff3 != NULL)
+		token2 = strtok_r(buff3, ",", &save_ptr2);
 
 	while(token1 != NULL) {										//Bucle para imprimir joins hasta que no queden tablas
 		printf("JOIN %s ON ", token1);
@@ -204,31 +265,28 @@ void success2(char* buff1, char* buff2, char* buff3){
 		printf("\n");
 		token1 = strtok_r(NULL, ",", &save_ptr1);
 	}
+	if(buff5 != NULL)
+		printf("GROUP BY %s\n", buff5);
+	
+	if(order_by!=0){
+		char *save_ptr3;
+		char *token3 = strtok_r(buff4, ",", &save_ptr3);
+		printf("ORDER_BY %s", token3);
+		token3 = strtok_r(NULL, ",", &save_ptr3);
+		while(token3 != NULL){
+			printf(", %s", token3);
+			token3 = strtok_r(NULL, ",", &save_ptr3);
+		}
+		if (order_by==1)
+			printf(" ASC\n");
+		else
+			printf(" DESC\n");
+	}
 }
 
 void yyerror(char const *message){
     fprintf (stderr, "Error: %s\n", message);
 	exit(0);
-}
-
-void handleError(int error){
-	if (error==1)
-		yyerror("Has escrito atributos en vez de tablas");
-	
-	else if (error==2)
-		yyerror("Has escrito tablas en vez de atributos");
-	
-	else if (error==3)
-		yyerror("Has escrito claves en vez de atributos");
-	
-	else if (error==4)
-		yyerror("Has escrito atributos en vez de claves");
-	
-	else if (error==5)
-		yyerror("Has escrito tablas en vez de claves");
-	
-	else if (error==6)
-		yyerror("Has escrito claves en vez de tablas");
 }
 
 char *listOfStrings(char* string){
@@ -267,7 +325,55 @@ int main(int argc, char *argv[]) {
   		yy_scan_string(input);
   		yyparse();
 	}
+	else
+		i++;				//Para seguir controlando el orden de los inputs
 
+	input = (char*)realloc(input, 2048);
+	printf("Agrupar por atributos (opcional): ");
+	fgets(input, 2048, stdin);
+	if (strlen(input) > 1){
+		yy_scan_string(input);
+  		yyparse();
+	}
+
+	input = (char*)realloc(input, 2048);
+	printf("Orden ASCENDENTE/DESCENDENTE por atributos (opcional): ");
+	fgets(input, 2048, stdin);
+	if (strlen(input) > 1){
+		yy_scan_string(input);
+  		yyparse();
+	}
+
+	if(atributos != NULL && tablas!= NULL){
+		if(claves != NULL){
+			if(group_by != NULL){
+				if(orden!=NULL)
+					success(atributos, tablas, claves, orden, group_by);
+				else
+					success(atributos, tablas, claves, NULL, group_by);
+			}
+			else{
+				if(orden!=NULL)
+					success(atributos, tablas, claves, orden, NULL);
+				else
+					success(atributos, tablas, claves, NULL, NULL);
+			}
+		}
+		else{
+			if(group_by != NULL){
+				if(orden!=NULL)
+					success(atributos, tablas, NULL, orden, group_by);
+				else
+					success(atributos, tablas, NULL, NULL, group_by);
+			}
+			else{
+				if(orden!=NULL)
+					success(atributos, tablas, NULL, orden, NULL);
+				else
+					success(atributos, tablas, NULL, NULL, NULL);
+			}
+		}
+	}
 
 	free(input);
 	return 0;
