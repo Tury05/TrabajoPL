@@ -10,7 +10,6 @@ void yyerror (char const *);
 void * yy_scan_string(const char*);
 void success(char* buff1, char* buff2, char* buff3, char* buff4, char* buff5);
 char * listOfStrings(char* stringOfTables);
-char * quitCorchetes(char* string);
 char * atributos;
 char * tablas;
 char * claves;
@@ -299,13 +298,6 @@ char *listOfStrings(char* string){
 	return token;
 }
 
-char* quitCorchetes(char* string){
-	char * keys = strdup(string);
-	keys++;
-	keys[strlen(keys) - 1] = '\0';
-	return keys;
-}
-
 void check_attributes(char* buff1, char* buff2) {
 	char str1[50];
 	char str2[50];
@@ -388,7 +380,6 @@ int main(int argc, char *argv[]) {
   		yyparse();
 	}
 
-	check_attributes(atributos, tablas);
 	success(atributos, tablas, claves, orden, group_by);
 
 	if (file) fclose(f);
