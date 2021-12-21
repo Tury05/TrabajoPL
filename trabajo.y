@@ -38,111 +38,86 @@ int where_type;
 statement:
 	columns	{i++;
 			if (i==2) //Comprobamos que solo se escriban atributos una vez
-				yyerror("Has escrito atributos en vez de tablas");
-			
+				yyerror("Has escrito atributos en vez de tablas");		
 			else if (i==3)
-				yyerror("Has escrito atributos en vez de claves");
-			
+				yyerror("Has escrito atributos en vez de claves");			
 			else if (i==4)
-				yyerror("Has escrito atributos en vez de clausulas");
-			
+				yyerror("Has escrito atributos en vez de cláusulas");		
 			else if (i==6)
-				yyerror("No has escrito el orden (ASCENDENTE/DESCENDENTE)");
-			
+				yyerror("No has escrito el orden (ASCENDENTE/DESCENDENTE)");			
 			else if (i == 1)
-				atributos = $1;
-			
+				atributos = $1;		
 			else
 				group_by = $1;}
 	|tables {i++;
 				if (i==1 || i==5) 
-					yyerror("Has escrito tablas en vez de atributos");
-				
+					yyerror("Has escrito tablas en vez de atributos");				
 				else if (i==3) 
-					yyerror("Has escrito tablas en vez de claves");
-				
+					yyerror("Has escrito tablas en vez de claves");				
 				else if (i==4)
-					yyerror("Has escrito tablas en vez de clausulas");
-
+					yyerror("Has escrito tablas en vez de cláusulas");
 				else if (i==6)
 					yyerror("Ha escrito tablas en vez de un orden");
-
 				else
 					tablas = $1;
 			}
 	|keys{i++;
 			if (i==1 || i==5) 
 				yyerror("Has escrito relaciones en vez de atributos");
-
 			else if (i==2) 
-				yyerror("Has escrito relaciones en vez de tablas");
-			
+				yyerror("Has escrito relaciones en vez de tablas");			
 			else if (i==4)
-					yyerror("Has escrito relaciones en vez de clausulas");
-			
+					yyerror("Has escrito relaciones en vez de cláusulas");			
 			else if (i==6)
 				yyerror("Ha escrito relaciones en vez de un orden");
-
 			else
 				claves = $1;
 		}
 	|multiplekeys{i++;
 					if (i==1 || i==5) 
 						yyerror("Has escrito relaciones en vez de atributos");
-
 					else if (i==2) 
-						yyerror("Has escrito relaciones en vez de tablas");
-					
+						yyerror("Has escrito relaciones en vez de tablas");				
 					else if (i==4)
-						yyerror("Has escrito relaciones en vez de clausulas");
-
+						yyerror("Has escrito relaciones en vez de cláusulas");
 					else if (i==6)
 						yyerror("Ha escrito relaciones en vez de un orden");
-
 					else
 						claves = $1;
 				}
 	|order{i++;
 			if (i==1 || i==5)
-				yyerror("Has escrito un orden en vez de solo atributos");
-			
+				yyerror("Has escrito un orden en vez de solo atributos");		
 			else if (i==2)
-				yyerror("Has escrito un orden en vez de tablas");
-			
+				yyerror("Has escrito un orden en vez de tablas");		
 			else if (i==3)
-				yyerror("Has escrito un orden en vez de relaciones");
-			
+				yyerror("Has escrito un orden en vez de relaciones");		
 			else if (i==4)
-					yyerror("Has escrito un orden en vez de clausulas");
-			
+					yyerror("Has escrito un orden en vez de cláusulas");			
 			else
 				orden = $1;
 		}
 	|where{i++;
 			if (i==1 || i==5)
-				yyerror("Has escrito clausulas en vez de solo atributos");
-			
+				yyerror("Has escrito cláusulas en vez de solo atributos");		
 			else if (i==2)
-				yyerror("Has escrito clausulas en vez de tablas");
-			
+				yyerror("Has escrito cláusulas en vez de tablas");		
 			else if (i==3)
-				yyerror("Has escrito clausulas en vez de relaciones");
-			
+				yyerror("Has escrito cláusulas en vez de relaciones");		
 			else if (i==6)
-						yyerror("Ha escrito clausulas en vez de un orden");
-
+						yyerror("Ha escrito cláusulas en vez de un orden");
 			else
 				where = $1;
 		}
 
-	|ERROR{yyerror("Parametro incorrecto"); return 0;}
+	|ERROR{yyerror("Parámetro incorrecto"); return 0;}
 	;
 
 columns:
 	NAME_COLUMN	{$1++; $1[strlen($1) - 1] = '\0'; $$ = $1;} /* las dos primeras instrucciones son para quitar las comillas */
-	|NAME_COLUMN COMMA columns {$1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, $2), $3); $$ = $1;}
+	|NAME_COLUMN COMMA columns {$1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, ", "), $3); $$ = $1;}
 	|NAME_COLUMN COMMA ERROR {yyerror("Nombre de atributo inválido");}
-	|ERROR COMMA columns {yyerror("Nombre de atributo de inválido");}
+	|ERROR COMMA columns {yyerror("Nombre de atributo inválido");}
 	|ERROR COMMA ERROR {yyerror("Nombres de atributos inválidos");}
 	;
 
@@ -219,14 +194,14 @@ order:
 	|NAME_COLUMN DESC {order_by=2; $1++; $1[strlen($1) - 1] = '\0'; $$=$1;}
 	|NAME_COLUMN COMMA columns ASC {order_by=1; $1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, $2), $3); $$=$1;}
 	|NAME_COLUMN COMMA columns DESC {order_by=2; $1++; $1[strlen($1) - 1] = '\0'; strcat(strcat($1, $2), $3); $$=$1;}
-	|ERROR ASC {yyerror("Atributo invalido");}
-	|ERROR DESC {yyerror("Atributo invalido");}
-	|ERROR COMMA columns ASC {yyerror("Atributo invalido");}
-	|ERROR COMMA columns DESC {yyerror("Atributo invalido");}
-	|NAME_COLUMN COMMA ERROR ASC {yyerror("Atributo invalido");}
-	|NAME_COLUMN COMMA ERROR DESC {yyerror("Atributo invalido");}
-	|ERROR COMMA ERROR ASC {yyerror("Atributos invalidos");}
-	|ERROR COMMA ERROR DESC {yyerror("Atributos invalidos");}
+	|ERROR ASC {yyerror("Atributo inválido");}
+	|ERROR DESC {yyerror("Atributo inválido");}
+	|ERROR COMMA columns ASC {yyerror("Atributo inválido");}
+	|ERROR COMMA columns DESC {yyerror("Atributo inválido");}
+	|NAME_COLUMN COMMA ERROR ASC {yyerror("Atributo inválido");}
+	|NAME_COLUMN COMMA ERROR DESC {yyerror("Atributo inválido");}
+	|ERROR COMMA ERROR ASC {yyerror("Atributos inválidos");}
+	|ERROR COMMA ERROR DESC {yyerror("Atributos inválidos");}
 	;
 
 where:
@@ -252,14 +227,17 @@ where:
 clauses:
 	STRING {$$ = $1;}
 	|NUMBER {$$ = $1;}
+	;
 
 string:
 	STRING {$$ = $1;}
 	|STRING COMMA string {strcat($1, $3); $$ = $1;}
+	;
 
 number:
 	NUMBER {$$ = $1;}
 	|NUMBER COMMA number {strcat($1, $3); $$ = $1;}
+	;
 
 
 %%
@@ -272,7 +250,7 @@ void success(char* buff1, char* buff2, char* buff3, char* buff4, char* buff5, ch
 		yyerror("Faltan relaciones FKEY->PKEY");
 	
 	else if(numOfTables<(numOfRels+1))
-		yyerror("Has escrito demasiadas relaciones FKEY->PKEY");
+		yyerror("Demasiadas relaciones FKEY->PKEY");
 
 	printf("\n-----Código SQL generado-----\n");
 	printf("SELECT %s\nFROM %s\n", buff1, token1);		
@@ -422,6 +400,7 @@ void success(char* buff1, char* buff2, char* buff3, char* buff4, char* buff5, ch
 		else
 			printf(" DESC\n");
 	}
+	printf(";\n");
 }
 
 void yyerror(char const *message){
@@ -438,32 +417,36 @@ char *listOfStrings(char* string){
 void check_attributes(char* buff1, char* buff2) {
 	char str1[50];
 	char str2[50];
-	int i = 0, j = 0, k = 0, l = 0, end = 0, start = 0, success = 1;
+	int i = 0, j = 0, k = 0, l = 0, start = 0, success = 1;
 	while (buff1[i] != '\0') {
 		if (buff1[i] == '.') {
 			j = i;
-			end = j;
 			while ((buff1[j-1] != ',') && j>0) {
 				j--;
 			}
-			start = j;
 			k = 0;
 			while ((buff2[k] != '\0')) {
-				l = 0;
-				if (buff2[l] == buff1[start]) {
-					while ((l < end) || ((buff2[l] != ',') && (buff2[l] != '\0'))) {
-						str1[l] = buff1[l];
-						str2[l] = buff2[l];
+				if (buff2[k] == buff1[j]) {
+					l = 0;
+					while ((buff2[k] != ',') && (buff2[k] != '\0')) {
+						str1[l] = buff1[j];
+						str2[l] = buff2[k];
 						l++;
+						j++;
+						k++;
 					}
 					success = strcmp(str1, str2);
 				}
-				if (success != 0) {
-					yyerror("La tabla seleccionada en los atributos no fue seleccionada en las tablas");
+				if (success == 0) {
+					break;
 				}
 				k++;
 			}
+			if (success != 0) {
+				yyerror("La tabla indicada en los atributos no fue seleccionada en las tablas");
+			}
 		}
+		if (success == 0) success++;
 		i++;
 	}
 }
@@ -473,6 +456,7 @@ int main(int argc, char *argv[]) {
 	bool file = false;
 	FILE *f;
 	int fd = dup(fileno(stdout));
+	
 	if (argc == 3 && strcmp(argv[1], "-f") == 0) {
 		f = freopen(argv[2], "a", stdout);
 		file = true;
@@ -491,9 +475,11 @@ int main(int argc, char *argv[]) {
   	yy_scan_string(input);
   	yyparse();
 
+	check_attributes(atributos, tablas);
+
 	if (join == 1){
 		input = (char*)realloc(input, 2048);
-		dprintf(fd, "Relacion FKEY->PKEY: ");
+		dprintf(fd, "Relación FKEY->PKEY: ");
 		fgets(input, 2048, stdin);
   		yy_scan_string(input);
   		yyparse();
@@ -502,7 +488,7 @@ int main(int argc, char *argv[]) {
 		i++;				//Para seguir controlando el orden de los inputs
 
 	input = (char*)realloc(input, 2048);
-	dprintf(fd, "Escriba las clausulas where (opcional): ");
+	dprintf(fd, "Cláusulas where (opcional): ");
 	fgets(input, 2048, stdin);
 	if (strlen(input) > 1){
 		yy_scan_string(input);
@@ -533,7 +519,10 @@ int main(int argc, char *argv[]) {
 
 	success(atributos, tablas, claves, orden, group_by, where);
 
-	if (file) fclose(f);
+	if (file) {
+		dprintf(fd, "\nConsulta SQL escrita correctamente en %s\n", argv[2]);
+		fclose(f);
+	}
 	free(input);
 	return 0;
 }
