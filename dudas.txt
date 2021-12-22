@@ -1,3 +1,0 @@
-Cuando la consulta es un poco larga (no sé la longitud exacta, pero con 3 o 4 atributos y 3 o 4 tablas más o menos) hace cosas raras, no sé si es porque se queda sin memoria y habría que reservar más, o qué pasa
-
-Lo puse en un comentario pero con los JOIN habría que poner el = y los atributos iguales de las tablas, pero yo creo que es imposible porque no tienen ni porqué aparecer en el SELECT entonces no sé cómo solucionaremos eso.
