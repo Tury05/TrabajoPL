@@ -1,9 +1,13 @@
 # Cosas que quedan por hacer
 
 ## Acabar de redactar la memoria
-Ahora voy a dormir, pretendo acabarla mañana por la mañana
 
 ## Probar todo de forma más exhaustiva
 
-## Escribir el fichero con los ejemplos
-No lo hice ya porque al ser interactivo no tengo muy claro cómo hacerlo...
+## Añadir más ejemplos al fichero de ejemplos
+Le pregunté cómo hacerlo y me dijo:
+Hola Manuel. Simplememte pones en ese fichero una especie de log con las entradas y su correspondiente resultado
+Y con algún caso raro como para los errores
+
+Supongo que como lo estoy haciendo está bien, pero hay que añadir algún ejemplo más
+

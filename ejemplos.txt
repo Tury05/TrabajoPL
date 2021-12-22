@@ -1,0 +1,58 @@
+----------1----------
+$ flex trabajo.l
+$ bison -o trabajo.tab.c trabajo.y -yd
+$ gcc -o trabajo lex.yy.c trabajo.tab.c -lfl -ly
+$ ./trabajo
+#######SQL CODE CREATOR#######
+
+Atributos a mostrar (""): "atributo"
+Tablas a las que pertenecen los atributos (''): 'tabla'
+Cláusulas where (opcional): 
+Agrupar por atributos (opcional): 
+Orden ASCENDENTE/DESCENDENTE por atributos (opcional): 
+
+-----Código SQL generado-----
+SELECT atributo
+FROM tabla
+;
+
+
+----------2----------
+$ ./trabajo
+#######SQL CODE CREATOR#######
+
+Atributos a mostrar (""): "atributo1", "atributo2"
+Tablas a las que pertenecen los atributos (''): 'tabla1', 'tabla2'
+Relación FKEY->PKEY: ("tabla1.atributo1", "tabla2.atributo2")
+Cláusulas where (opcional): 
+Agrupar por atributos (opcional): 
+Orden ASCENDENTE/DESCENDENTE por atributos (opcional): 
+
+-----Código SQL generado-----
+SELECT atributo1, atributo2
+FROM tabla1
+JOIN tabla2 ON tabla1.atributo1 = tabla2.atributo2
+;
+
+
+----------3----------
+$ ./trabajo
+#######SQL CODE CREATOR#######
+
+Atributos a mostrar (""): "tablaErronea.atributo", "atributo2"
+Tablas a las que pertenecen los atributos (''): 'tabla'
+Error: La tabla indicada en los atributos no fue seleccionada en las tablas
+
+
+----------4----------
+$ ./trabajo
+#######SQL CODE CREATOR#######
+
+Atributos a mostrar (""): "atr1", "atr2", "atr3"
+Tablas a las que pertenecen los atributos (''): 'tabla1', 'tabla2', 'tabla3'
+Relación FKEY->PKEY: ("tabla1.atr1", "tabla2.atr2")
+Cláusulas where (opcional): 
+Agrupar por atributos (opcional): 
+Orden ASCENDENTE/DESCENDENTE por atributos (opcional): 
+Error: Faltan relaciones FKEY->PKEY
+
