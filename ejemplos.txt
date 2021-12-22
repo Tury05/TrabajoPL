@@ -56,3 +56,97 @@ Agrupar por atributos (opcional):
 Orden ASCENDENTE/DESCENDENTE por atributos (opcional): 
 Error: Faltan relaciones FKEY->PKEY
 
+----------5----------
+$ ./trabajo
+#######SQL CODE CREATOR#######
+
+Atributos a mostrar (""): "atr1", "atr2", "atr3"
+Tablas a las que pertenecen los atributos (''): 'tabla1', 'tabla2', 'tabla3'
+Relación FKEY->PKEY: ("tabla1.atr1", "tabla2.atr2"), ("tabla2.clave1", "tabla3.clave1")
+Cláusulas where (opcional): "atr1" igual a 2
+Agrupar por atributos (opcional): "atr2"
+Orden ASCENDENTE/DESCENDENTE por atributos (opcional): "atr3" ascendente
+
+-----Código SQL generado-----
+SELECT atr1, atr2, atr3
+FROM tabla1
+JOIN tabla2 ON tabla1.atr1 = tabla2.atr2
+JOIN tabla3 ON tabla2.clave1 = tabla3.clave1
+WHERE atr1 = 2
+GROUP BY atr2
+ORDER_BY atr3 ASC
+;
+
+
+----------6----------
+$ ./trabajo
+#######SQL CODE CREATOR#######
+
+Atributos a mostrar (""): "atr1", "atr2", "atr3"
+Tablas a las que pertenecen los atributos (''): 'tabla1', 'tabla2', 'tabla3'
+Relación FKEY->PKEY: (("clave1", "clave2"), ("clave3", "clave4")), ("tabla2.clave5", "tabla3.clave6")
+Cláusulas where (opcional): "atr1" entre 2, 5
+Agrupar por atributos (opcional): "atr2"
+Orden ASCENDENTE/DESCENDENTE por atributos (opcional): "atr3" desc
+
+-----Código SQL generado-----
+SELECT atr1, atr2, atr3
+FROM tabla1
+JOIN tabla2 ON clave1 = clave2 AND clave3 = clave4
+JOIN tabla3 ON tabla2.clave5 = tabla3.clave6
+WHERE atr1 BETWEEN 2 AND 5
+GROUP BY atr2
+ORDER_BY atr3 DESC
+;
+
+
+----------7----------
+$ ./trabajo
+#######SQL CODE CREATOR#######
+
+Atributos a mostrar (""): "atr1", "atr2", "atr3"
+Tablas a las que pertenecen los atributos (''): 'tabla1'
+Cláusulas where (opcional): "atr1" no es nulo
+Agrupar por atributos (opcional): "atr2", "atr3"
+Orden ASCENDENTE/DESCENDENTE por atributos (opcional): "atr3" desc
+
+-----Código SQL generado-----
+SELECT atr1, atr2, atr3
+FROM tabla1
+WHERE atr1 IS NOT NULL
+GROUP BY atr2, atr3
+ORDER_BY atr3 DESC
+;
+
+
+----------8----------
+$ ./trabajo
+#######SQL CODE CREATOR#######
+
+Atributos a mostrar (""): "atr1", ".?"
+Error: Nombre de atributo inválido
+
+----------9----------
+$ ./trabajo
+#######SQL CODE CREATOR#######
+
+Atributos a mostrar (""): "atr1", "atr2"
+Tablas a las que pertenecen los atributos (''): 'tabla1', '.,.'
+Error: Nombre de tabla inválido
+
+----------10----------
+$ ./trabajo
+#######SQL CODE CREATOR#######
+
+Atributos a mostrar (""): 'tabla'
+Error: Has escrito tablas en vez de atributos
+
+----------11----------
+$ ./trabajo
+#######SQL CODE CREATOR#######
+
+Atributos a mostrar (""): "atributo"
+Tablas a las que pertenecen los atributos (''): 'tabla1'
+Cláusulas where (opcional): "atr1"
+Error: Has escrito atributos en vez de cláusulas
+

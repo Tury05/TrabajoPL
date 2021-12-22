@@ -1,4 +1,0 @@
-Comprobar que Clave("tabla.atributo") == tabla
-Comprobar atributo("tabla.atributo") == tabla
-Numero de tuplas de claves no sea menor a tablas escritas
-Gestionar errores lexicos en gramatica
