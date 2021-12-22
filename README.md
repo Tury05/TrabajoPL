@@ -1,4 +1,9 @@
-# TrabajoPL
+# Cosas que quedan por hacer
 
-## Manu
-Quité las comillas a los atributos y a las tablas para hacer el print y puse , en los atributos y JOIN en las tablas, y lo que estaba para que no se escribieran dos veces los atributos lo amplié para que tampoco se escribna dos veces las tablas.
+## Acabar de redactar la memoria
+Ahora voy a dormir, pretendo acabarla mañana por la mañana
+
+## Probar todo de forma más exhaustiva
+
+## Escribir el fichero con los ejemplos
+No lo hice ya porque al ser interactivo no tengo muy claro cómo hacerlo...

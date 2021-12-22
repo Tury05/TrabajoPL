@@ -1,0 +1,7 @@
+Autores: Arturo Ramos Rey y Manuel Corujo Muíña
+
+El objetivo de esta práctica es proporcionar una intefaz interactiva al usuario, de modo que le resulte más fácil realizar consultas SQL. Se le irán haciendo preguntas y parseando sus respuestas, para finalmente imprimir la conulta resultado (por salida estándar por defecto, en un fichero si se indica con el flag -f).
+
+Los ficheros que componen la práctica son el analizador léxico -trabajo.l- y el analizador sintáctico -trabajo.y-, además de un Makefile para facilitar la compilación y ejecución. Para compilar y ejecutar la práctica lo recomendable es hacer uso del Makefile. Este tiene la orden compile para compilar todo, run para ejecución normal (salida por stdout), run2 para ejecución con salida por pantalla y clean para eliminar todos los ficheros salvo los fuentes. Además, incluye una variable llamada SALIDA en la que se guarda el nombre del archivo en el que se guarda la salida en caso de ejecutar run2.
+
+Aquí habría que describir el analizador léxico y sintáctico y hablar del tratamiento de errores y demás detalles que consideremos importantes.

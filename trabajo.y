@@ -417,7 +417,7 @@ char *listOfStrings(char* string){
 void check_attributes(char* buff1, char* buff2) {
 	char str1[50];
 	char str2[50];
-	int i = 0, j = 0, k = 0, m = 0, l = 0, success = 0;
+	int i = 0, j = 0, k = 0, l = 0, success = 0;
 
 	while (buff1[i] != '\0') {
 		if (buff1[i] == '.') {
@@ -435,14 +435,13 @@ void check_attributes(char* buff1, char* buff2) {
 			str2[l] = '\0';
 			l = 0;
 			while (buff2[l] != '\0') {
-					m = 0;
+					k = 0;
 					while ((buff2[l] != ',') && (buff2[l] != '\0')) {
-						str2[m] = buff2[l];
-						m++;
+						str2[k] = buff2[l];
+						k++;
 						l++;
 					}
-					str2[p] = '\0';
-				printf("str1: %s\nstr2: %s\n", str1, str2);
+				str2[k] = '\0';
 				success = strcmp(str1, str2);
 				if (success == 0) {break;}
 				l++;
@@ -455,81 +454,42 @@ void check_attributes(char* buff1, char* buff2) {
 	}
 }
 
-
-void check_join(char* buff1, char* buff2, char* buff3) {
+void check_join(char* buff1, char* buff2, char *buff3) {
 	char str1[50];
 	char str2[50];
-	int i = 0, j = 0, k = 0, l = 0, start = 0, success = 1;
-	while (buff1[i] != '\0') { //Este bucle comprueba los atributos (la parte posterior al punto)
+	int i = 0, j = 0, k = 0, l = 0, success = 0;
+
+	while (buff1[i] != '\0') {
 		if (buff1[i] == '.') {
-			j = i+1;
-			k = 0;
-			while ((buff2[k] != '\0')) {
-				if (buff2[k] == buff1[j]) {
-					l = 0;
-					while ((buff1[j] != ',') && (buff1[j] != '\0') && (buff1[j] != '.')) {
-						str1[l] = buff1[j];
-						j++;
-						l++;
-					}
-					str1[l] = '\0';
-					l = 0;
-					while ((buff2[k] != ',') && (buff2[k] != '\0')) {
-							str2[l] = buff2[k];
-							l++;
-							k++;
-					}
-					str2[l] = '\0';
-					success = strcmp(str1, str2);
-				}
-				if (success == 0) {
-					break;
-				}
-				k++;
-			}
-			if (success != 0) {
-				yyerror("Atributos erróneos para formar las claves");
-			} else success++;
-		}
-		i++;
-	}
-	i = 0;
-	while (buff1[i] != '\0') { //Este bucle comprueba las tablas (la parte anterior al punto)
-		if (buff1[i] == '.') {
+			success = 1;
 			j = i;
-			while ((buff1[j-1] != ',') && j>0) {
+			while ((buff1[j-1] != ',') && (j>0)) {
 				j--;
 			}
-			k = 0;
-			while ((buff3[k] != '\0')) {
-				if (buff3[k] == buff1[j]) {
-					l = 0;
-					while ((buff3[k] != ',') && (buff3[k] != '\0')) {
-						str2[l] = buff3[k];
-						l++;
-						k++;
-					}
-					str2[l] = '\0';
-					l = 0;
-					while ((buff1[j] != ',') && (buff1[j] != '\0') && (buff1[j] != '.')) {
-						str1[l] = buff1[j];
-						j++;
-						l++;
-					}
-					str1[l] = '\0';
-					printf("str1 %s\n str2 %s\n", str1, str2);
-					success = strcmp(str1, str2);
-				}
-				if (success == 0) {
-					break;
-				}
-				k++;
+			l = 0;
+			while (buff1[j] != '.') {
+				str1[l] = buff1[j];
+				j++;
+				l++;
 			}
-			if (success != 0) {
-				yyerror("Tablas erróneas para formar las claves");
+			str2[l] = '\0';
+			l = 0;
+			while (buff2[l] != '\0') {
+					k = 0;
+					while ((buff2[l] != ',') && (buff2[l] != '\0')) {
+						str2[k] = buff2[l];
+						k++;
+						l++;
+					}
+				str2[k] = '\0';
+				success = strcmp(str1, str2);
+				if (success == 0) {break;}
+				l++;
 			}
 		}
-		if (success == 0) success++;
+		if (success != 0) {
+			yyerror("Tabla errónea para la creación de las claves");
+		}
 		i++;
 	}
 }
@@ -566,7 +526,7 @@ int main(int argc, char *argv[]) {
 		fgets(input, 2048, stdin);
   		yy_scan_string(input);
   		yyparse();
-		//check_join(claves, atributos, tablas);
+		check_join(claves, tablas, atributos);
 	}
 	else
 		i++;				//Para seguir controlando el orden de los inputs
