@@ -1,3 +1,4 @@
+
 Autores: Arturo Ramos Rey y Manuel Corujo Muíña
 
 El objetivo de esta práctica es proporcionar una intefaz interactiva al usuario, de modo que le resulte más fácil realizar consultas SQL. 
@@ -15,5 +16,3 @@ Así, por cada respuesta del usuario se produce una llamada a yyparse(). La gram
 
 Los errores que se controlan son que las respuestas del usuario sean a las preguntas que se hacen (comprobar que cuando se pide que introduzca nombres de tablas realmente introduzca nombres de tablas y no nombres de atributos, por ejemplo), 
 que el número de claves sea igual al número de tablas menos uno, que los nombres de tablas y atributos sean válidos y que para los atributos escritos de la forma "tabla.atributo" esa tabla se indique también en la pregunta de tablas a seleccionar.
-
-Además del codigo se añade un fichero txt con varios ejemplos de entrada. En los casos en los que devuelve error hemos indicado tambien el tipo de error.
